@@ -1,0 +1,31 @@
+name: Sync to Gitee
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"  # 每2小时运行一次
+  workflow_dispatch:       # 支持手动运行
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      # 1️⃣ 检出你当前 GitHub 仓库的 main 分支
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      # 2️⃣ 配置 SSH 私钥（你要把 Gitee 公钥放到 Gitee 仓库的部署公钥，私钥存在 GitHub secret）
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GITEE_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan gitee.com >> ~/.ssh/known_hosts
+
+      # 3️⃣ 推送到 Gitee 私有仓库（main -> master）
+      - name: Push to Gitee
+        run: |
+          git remote add gitee git@gitee.com:liulimose/my_iptv_from_github.git
+          git push -f gitee main:master
